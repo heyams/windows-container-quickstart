@@ -1,0 +1,1 @@
+docker run -d --isolation=hyperv heyajavaacr.azurecr.io/tomcat:11-java17-nanoserver-ltsc2019

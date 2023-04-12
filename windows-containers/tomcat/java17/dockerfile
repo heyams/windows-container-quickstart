@@ -1,0 +1,17 @@
+FROM mcr.microsoft.com/windows/servercore:ltsc2019 AS build-machine
+RUN powershell.exe -Command "& { Start-BitsTransfer -Source https://aka.ms/download-jdk/microsoft-jdk-17.0.6-windows-x64.zip -Destination microsoft-jdk-17.0.6-windows-x64.zip }"
+RUN powershell.exe -Command "& { Start-BitsTransfer -Source https://dlcdn.apache.org/tomcat/tomcat-11/v11.0.0-M4/bin/apache-tomcat-11.0.0-M4-windows-x64.zip -Destination apache-tomcat-11.0.0-M4.zip }"
+RUN powershell.exe -Command "& { Expand-Archive -Path microsoft-jdk-17.0.6-windows-x64.zip}"
+RUN powershell.exe -Command "& { Expand-Archive -Path apache-tomcat-11.0.0-M4.zip}"
+RUN powershell.exe -Command "& { (Get-Content apache-tomcat-11.0.0-M4\conf\server.xml) -replace '8080', '80' | Set-Content apache-tomcat-11.0.0-M4\conf\server.xml }"
+COPY /jdk-17.0.6+10/ /jdk-17.0.6+10/
+COPY /apache-tomcat-11.0.0-M4/ /apache-tomcat-11.0.0-M4/
+
+FROM mcr.microsoft.com/windows/nanoserver:ltsc2019 AS web-machine
+COPY --from=build-machine /jdk-17.0.6+10/ /jdk-17.0.6+10/
+COPY --from=build-machine /apache-tomcat-11.0.0-M4/ /apache-tomcat-11.0.0-M4/
+ENV JAVA_HOME \jdk-17.0.6+10
+ENV CATALINA_HOME \apache-tomcat-11.0.0-M4
+ENTRYPOINT ["/apache-tomcat-11.0.0-M4/bin/catalina.bat", "run"]
+EXPOSE 80
+
